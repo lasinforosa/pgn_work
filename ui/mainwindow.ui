@@ -19,7 +19,7 @@
      <x>280</x>
      <y>50</y>
      <width>811</width>
-     <height>431</height>
+     <height>451</height>
     </rect>
    </property>
   </widget>
@@ -799,14 +799,27 @@
      <string>Salva nou PGNç</string>
     </property>
    </widget>
+   <widget class="QPushButton" name="pushButton_9">
+    <property name="geometry">
+     <rect>
+      <x>580</x>
+      <y>10</y>
+      <width>80</width>
+      <height>21</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Filtres</string>
+    </property>
+   </widget>
   </widget>
   <widget class="QTextEdit" name="textEdit">
    <property name="geometry">
     <rect>
      <x>283</x>
-     <y>483</y>
+     <y>503</y>
      <width>801</width>
-     <height>261</height>
+     <height>241</height>
     </rect>
    </property>
   </widget>
