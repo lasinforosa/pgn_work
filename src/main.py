@@ -18,7 +18,7 @@ class MainWindow(QMainWindow):
 
         # OPCIO 2:
         # ui carregat com XML
-        self.ui = QUiLoader().load("ui/main.ui")
+        self.ui = QUiLoader().load("../ui/mainwindow.ui")
         self.setCentralWidget(self.ui)
 
     def init_ui(self):
