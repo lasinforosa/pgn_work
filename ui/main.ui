@@ -231,6 +231,9 @@
           <property name="text">
            <string/>
           </property>
+          <property name="cursorPosition">
+           <number>0</number>
+          </property>
          </widget>
          <widget class="QLabel" name="label_9">
           <property name="geometry">
@@ -352,17 +355,17 @@
             <second>0</second>
             <year>2000</year>
             <month>1</month>
-            <day>4</day>
+            <day>3</day>
            </datetime>
           </property>
           <property name="displayFormat">
-           <string>ddMM/yyyy</string>
+           <string>dd/MM/yyyy</string>
           </property>
           <property name="calendarPopup">
            <bool>true</bool>
           </property>
           <property name="currentSectionIndex">
-           <number>2</number>
+           <number>0</number>
           </property>
          </widget>
          <widget class="QLabel" name="label_10">
@@ -571,12 +574,12 @@
           </property>
           <item>
            <property name="text">
-            <string>Normal</string>
+            <string>Standard</string>
            </property>
           </item>
           <item>
            <property name="text">
-            <string>Escacs960</string>
+            <string>Fischerandom</string>
            </property>
           </item>
          </widget>
@@ -591,12 +594,12 @@
           </property>
           <item>
            <property name="text">
-            <string>cap</string>
+            <string>*</string>
            </property>
           </item>
           <item>
            <property name="text">
-            <string>1/2 - 1/2</string>
+            <string>1/2-1/2</string>
            </property>
           </item>
           <item>
@@ -610,7 +613,7 @@
            </property>
           </item>
          </widget>
-         <widget class="QComboBox" name="cb_TitBlanc">
+         <widget class="QComboBox" name="cb_titBlanc">
           <property name="geometry">
            <rect>
             <x>210</x>
@@ -624,7 +627,12 @@
           </property>
           <item>
            <property name="text">
-            <string>cap</string>
+            <string>*</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>CM</string>
            </property>
           </item>
           <item>
@@ -798,7 +806,7 @@
            <string>N</string>
           </property>
          </widget>
-         <widget class="QComboBox" name="cb_TitNegre">
+         <widget class="QComboBox" name="cb_titNegre">
           <property name="geometry">
            <rect>
             <x>210</x>
@@ -812,7 +820,12 @@
           </property>
           <item>
            <property name="text">
-            <string>cap</string>
+            <string>*</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>CM</string>
            </property>
           </item>
           <item>
@@ -982,7 +995,7 @@
          <property name="frameShadow">
           <enum>QFrame::Shadow::Raised</enum>
          </property>
-         <widget class="QPushButton" name="bt_salvaNouPGN">
+         <widget class="QPushButton" name="bt_salvaSQ3">
           <property name="geometry">
            <rect>
             <x>550</x>
@@ -992,7 +1005,7 @@
            </rect>
           </property>
           <property name="text">
-           <string>Salva nou PGN</string>
+           <string>salva BBDD</string>
           </property>
          </widget>
          <widget class="QPushButton" name="bt_llegirPGN">
@@ -1071,6 +1084,19 @@
           </property>
           <property name="text">
            <string>Sortir</string>
+          </property>
+         </widget>
+         <widget class="QPushButton" name="bt_nouPGN">
+          <property name="geometry">
+           <rect>
+            <x>20</x>
+            <y>10</y>
+            <width>80</width>
+            <height>21</height>
+           </rect>
+          </property>
+          <property name="text">
+           <string>Nou PGN</string>
           </property>
          </widget>
         </widget>
