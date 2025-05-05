@@ -119,7 +119,7 @@ class MainWindow(QMainWindow):
                 while True:
                     # Llegeix la següent partida. Pot aixecar excepcions si el PGN té errors greus.
                     game = chess.pgn.read_game(pgn_file)
-                    print(f"Llegint partida: {game}") # Missatge a consola o status bar
+                    # print(f"Llegint partida: {game}") # Missatge a consola o status bar
                     if game is None:
                         break # Fi del fitxer
 
