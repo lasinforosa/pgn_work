@@ -1,6 +1,7 @@
 # src/main.py
 
 import sys
+import io
 from PySide6.QtWidgets import QApplication, QMainWindow, QFileDialog, QTableWidget, QHeaderView, QTableWidgetItem
 from PySide6.QtCore import Qt, QDate
 from PySide6.QtUiTools import QUiLoader   
@@ -183,6 +184,25 @@ class MainWindow(QMainWindow):
              print(f"Índex de fila seleccionat ({selected_row_index}) fora de rang.")
 
 
+    def obtenir_jugades_txt(self, game):
+        """
+        Obté només el text de les jugades (i resultat) usant StringExporter
+        sense capçaleres.
+        """
+        # Crear un exportador que NO inclogui capçaleres
+        # Pots afegir comments=False, variations=False si tampoc els vols
+        exporter = chess.pgn.StringExporter(headers=False, comments=True, variations=True)
+
+        # Aplicar l'exportador al joc
+        moves_string = game.accept(exporter)
+
+        # L'exportador pot deixar salts de línia. Els normalitzem a espais.
+        # " ".join(moves_string.split()) és un bon truc per normalitzar espais en blanc
+        moves_string_net = " ".join(moves_string.split())
+
+        return moves_string_net.strip() # Assegurem que no hi hagi espais al principi/final
+    
+
     def mostra_jugades_partida(self, game):
         """Formata i mostra les jugades de la partida donada al QTextEdit."""
         if not game:
@@ -360,7 +380,7 @@ class MainWindow(QMainWindow):
             # Insereix les partides carregades
             for game in self.loaded_games:
                 headers = game.headers
-                pgn_game = game.mainline_moves()
+                pgn_game = self.obtenir_jugades_txt(game)
                 cursor.execute('''
                     INSERT INTO partides (blanc, elo_blanques, titol_blanc, fide_id_blanc,
                                 negre, elo_negres, titol_negre, fide_id_negre, 
