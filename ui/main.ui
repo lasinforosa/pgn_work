@@ -355,7 +355,7 @@
             <second>0</second>
             <year>2000</year>
             <month>1</month>
-            <day>3</day>
+            <day>2</day>
            </datetime>
           </property>
           <property name="displayFormat">
@@ -977,13 +977,13 @@
          <property name="minimumSize">
           <size>
            <width>0</width>
-           <height>40</height>
+           <height>80</height>
           </size>
          </property>
          <property name="maximumSize">
           <size>
            <width>16777215</width>
-           <height>40</height>
+           <height>80</height>
           </size>
          </property>
          <property name="styleSheet">
@@ -998,7 +998,7 @@
          <widget class="QPushButton" name="bt_salvaSQ3">
           <property name="geometry">
            <rect>
-            <x>550</x>
+            <x>530</x>
             <y>10</y>
             <width>91</width>
             <height>21</height>
@@ -1024,8 +1024,8 @@
          <widget class="QPushButton" name="bt_editaPartida">
           <property name="geometry">
            <rect>
-            <x>240</x>
-            <y>10</y>
+            <x>680</x>
+            <y>40</y>
             <width>80</width>
             <height>21</height>
            </rect>
@@ -1037,7 +1037,7 @@
          <widget class="QPushButton" name="bt_Filtres">
           <property name="geometry">
            <rect>
-            <x>670</x>
+            <x>680</x>
             <y>10</y>
             <width>80</width>
             <height>21</height>
@@ -1063,8 +1063,8 @@
          <widget class="QPushButton" name="bt_salvaPGN">
           <property name="geometry">
            <rect>
-            <x>440</x>
-            <y>10</y>
+            <x>210</x>
+            <y>40</y>
             <width>80</width>
             <height>21</height>
            </rect>
@@ -1077,7 +1077,7 @@
           <property name="geometry">
            <rect>
             <x>770</x>
-            <y>10</y>
+            <y>40</y>
             <width>80</width>
             <height>21</height>
            </rect>
@@ -1097,6 +1097,19 @@
           </property>
           <property name="text">
            <string>Nou PGN</string>
+          </property>
+         </widget>
+         <widget class="QPushButton" name="pushButton">
+          <property name="geometry">
+           <rect>
+            <x>530</x>
+            <y>40</y>
+            <width>111</width>
+            <height>21</height>
+           </rect>
+          </property>
+          <property name="text">
+           <string>Afegeix Partida</string>
           </property>
          </widget>
         </widget>
