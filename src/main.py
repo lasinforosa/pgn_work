@@ -46,13 +46,22 @@ class MainWindow(QMainWindow):
         self.tableWidget_Partides.itemSelectionChanged.connect(self.on_game_selected) # <-- Connexió clau
 
         # Accions dels botons panell dret
+        # PGN
         self.ui.bt_nouPGN.clicked.connect(self.crea_PGN)
         self.ui.bt_llegirPGN.clicked.connect(self.llegirPGN)
-        self.ui.bt_editaPartida.clicked.connect(self.pendent)
-        self.ui.bt_EsborraPartida.clicked.connect(self.pendent)
         self.ui.bt_salvaPGN.clicked.connect(self.save_as_PGN)
+        self.ui.bt_editaPartidaPGN.clicked.connect(self.pendent)
+        self.ui.bt_esborraPartidaPGN.clicked.connect(self.pendent)
+        self.ui.bt_FiltresPGN.clicked.connect(self.pendent)
+        # SQLite
+        self.ui.bt_novaSQ3.clicked.connect(self.pendent)                       
+        self.ui.bt_llegeixSQ3.clicked.connect(self.llegirSQ3)
         self.ui.bt_salvaSQ3.clicked.connect(self.save_as_sqlite)
-        self.ui.bt_Filtres.clicked.connect(self.pendent)
+        self.ui.bt_editaPartidaSQ3.clicked.connect(self.pendent)
+        self.ui.bt_esborraPartidaSQ3.clicked.connect(self.pendent)
+        self.ui.bt_FiltresSQ3.clicked.connect(self.pendent)
+
+    
         self.ui.bt_Sortir.clicked.connect(self.close)
 
         # Accions dels botons panell esquerra
@@ -332,6 +341,66 @@ class MainWindow(QMainWindow):
         except Exception as e:
             print(f"Error creant el fitxer PGN: {e}")
             self.ui.te_PGN.setPlainText(f"Error creant el fitxer PGN:\n{e}")  
+
+    
+    def llegirSQ3(self):
+        """Obre diàleg per seleccionar un fitxer SQLite i carregar les partides."""
+        file_path, _ = QFileDialog.getOpenFileName(self, "Obre Fitxer SQLite", "", "Fitxers SQLite (*.db);;Tots els fitxers (*)")
+        if not file_path:
+            return
+
+        self.loaded_games = [] # Buida la llista de partides anteriors
+        self.tableWidget_Partides.setRowCount(0) # Buida la taula
+        self.ui.te_PGN.clear() # Buida el visor de jugades
+        self.netejaCamps() # Buida els camps de detall
+
+        try:
+            # Important especificar encoding, utf-8 és comú, però pot variar.
+            # errors='ignore' o 'replace' pot ajudar amb caràcters invàlids.
+            
+            with open(file_path, 'r', encoding='utf-8', errors='replace') as pgn_file:
+                while True:
+                    # Llegeix la següent partida. Pot aixecar excepcions si el PGN té errors greus.
+                    game = chess.pgn.read_game(pgn_file)
+                    # print(f"Llegint partida: {game}") # Missatge a consola o status bar
+                    if game is None:
+                        break # Fi del fitxer
+
+                    self.loaded_games.append(game) # Guarda l'objecte sencer
+
+                    # Afegeix fila a la taula amb les capçaleres seleccionades
+                    row_position = self.tableWidget_Partides.rowCount()
+                    self.tableWidget_Partides.insertRow(row_position)
+
+                    self.headers = game.headers
+                    # Accedeix a les capçaleres de forma segura amb .get()
+                    data_row = [
+                        self.headers.get("White", "?"),
+                        self.headers.get("WhiteElo", "-"),
+                        self.headers.get("WhiteTitle", "?"), 
+                        self.headers.get("Black", "?"),
+                        self.headers.get("BlackElo", "-"),
+                        self.headers.get("BlackTitle", "?"),
+                        self.headers.get("Event", "?"),
+                        self.headers.get("Site", "?"),
+                        self.headers.get("Round", "?"),
+                        self.headers.get("Date", "????.??.??").replace('.', '/'), # Formata data si cal
+                        self.headers.get("Result", "*"),
+                        self.headers.get("ECO", "-")
+                    ]
+
+                    for col, data in enumerate(data_row):
+                         item = QTableWidgetItem(str(data)) # Assegura't que sigui string
+                         self.tableWidget_Partides.setItem(row_position, col, item)
+
+            # Ajusta l'amplada de les columnes al contingut després de carregar
+            # self.tableWidget_Partides.resizeColumnsToContents()
+            print(f"Carregades {len(self.loaded_games)} partides.") # Missatge a consola o status bar
+
+        except Exception as e:
+            # Mostra un error a l'usuari (millor amb QMessageBox)
+            print(f"Error llegint el fitxer PGN: {e}")
+            self.ui.te_PGN.setPlainText(f"Error llegint el fitxer PGN:\n{e}")
 
 
     def save_as_sqlite(self):

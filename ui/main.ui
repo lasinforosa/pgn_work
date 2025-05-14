@@ -355,7 +355,7 @@
             <second>0</second>
             <year>2000</year>
             <month>1</month>
-            <day>2</day>
+            <day>1</day>
            </datetime>
           </property>
           <property name="displayFormat">
@@ -969,149 +969,227 @@
             </property>
            </widget>
           </item>
+          <item>
+           <widget class="QFrame" name="frame_4">
+            <property name="minimumSize">
+             <size>
+              <width>0</width>
+              <height>80</height>
+             </size>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>16777215</width>
+              <height>80</height>
+             </size>
+            </property>
+            <property name="styleSheet">
+             <string notr="true">background-color: rgb(38, 162, 105);</string>
+            </property>
+            <property name="frameShape">
+             <enum>QFrame::Shape::StyledPanel</enum>
+            </property>
+            <property name="frameShadow">
+             <enum>QFrame::Shadow::Raised</enum>
+            </property>
+            <widget class="QPushButton" name="bt_salvaSQ3">
+             <property name="geometry">
+              <rect>
+               <x>530</x>
+               <y>10</y>
+               <width>91</width>
+               <height>21</height>
+              </rect>
+             </property>
+             <property name="text">
+              <string>salva BBDD</string>
+             </property>
+            </widget>
+            <widget class="QPushButton" name="bt_llegirPGN">
+             <property name="geometry">
+              <rect>
+               <x>10</x>
+               <y>10</y>
+               <width>80</width>
+               <height>21</height>
+              </rect>
+             </property>
+             <property name="text">
+              <string>Llegeix PGN</string>
+             </property>
+            </widget>
+            <widget class="QPushButton" name="bt_editaPartidaSQ3">
+             <property name="geometry">
+              <rect>
+               <x>550</x>
+               <y>40</y>
+               <width>80</width>
+               <height>21</height>
+              </rect>
+             </property>
+             <property name="text">
+              <string>Edita Partida</string>
+             </property>
+            </widget>
+            <widget class="QPushButton" name="bt_FiltresSQ3">
+             <property name="geometry">
+              <rect>
+               <x>640</x>
+               <y>40</y>
+               <width>80</width>
+               <height>21</height>
+              </rect>
+             </property>
+             <property name="text">
+              <string>Filtres</string>
+             </property>
+            </widget>
+            <widget class="QPushButton" name="bt_esborraPartidaPGN">
+             <property name="geometry">
+              <rect>
+               <x>300</x>
+               <y>10</y>
+               <width>51</width>
+               <height>21</height>
+              </rect>
+             </property>
+             <property name="text">
+              <string>Esborra</string>
+             </property>
+            </widget>
+            <widget class="QPushButton" name="bt_salvaPGN">
+             <property name="geometry">
+              <rect>
+               <x>110</x>
+               <y>10</y>
+               <width>80</width>
+               <height>21</height>
+              </rect>
+             </property>
+             <property name="text">
+              <string>Salva PGN</string>
+             </property>
+            </widget>
+            <widget class="QPushButton" name="bt_Sortir">
+             <property name="geometry">
+              <rect>
+               <x>780</x>
+               <y>40</y>
+               <width>61</width>
+               <height>31</height>
+              </rect>
+             </property>
+             <property name="text">
+              <string>Sortir</string>
+             </property>
+            </widget>
+            <widget class="QPushButton" name="bt_nouPGN">
+             <property name="geometry">
+              <rect>
+               <x>200</x>
+               <y>10</y>
+               <width>80</width>
+               <height>21</height>
+              </rect>
+             </property>
+             <property name="text">
+              <string>Nou PGN</string>
+             </property>
+            </widget>
+            <widget class="QPushButton" name="pushButton">
+             <property name="geometry">
+              <rect>
+               <x>430</x>
+               <y>40</y>
+               <width>111</width>
+               <height>21</height>
+              </rect>
+             </property>
+             <property name="text">
+              <string>Afegeix Partida</string>
+             </property>
+            </widget>
+            <widget class="QPushButton" name="bt_llegeixSQ3">
+             <property name="geometry">
+              <rect>
+               <x>430</x>
+               <y>10</y>
+               <width>91</width>
+               <height>21</height>
+              </rect>
+             </property>
+             <property name="text">
+              <string>Llegeix BBDD</string>
+             </property>
+            </widget>
+            <widget class="QPushButton" name="bt_novaSQ3">
+             <property name="geometry">
+              <rect>
+               <x>630</x>
+               <y>10</y>
+               <width>80</width>
+               <height>21</height>
+              </rect>
+             </property>
+             <property name="text">
+              <string>Nova BBDD</string>
+             </property>
+            </widget>
+            <widget class="QPushButton" name="pushButton_2">
+             <property name="geometry">
+              <rect>
+               <x>10</x>
+               <y>40</y>
+               <width>111</width>
+               <height>21</height>
+              </rect>
+             </property>
+             <property name="text">
+              <string>Afegeix Partida</string>
+             </property>
+            </widget>
+            <widget class="QPushButton" name="bt_editaPartidaPGN">
+             <property name="geometry">
+              <rect>
+               <x>130</x>
+               <y>40</y>
+               <width>80</width>
+               <height>21</height>
+              </rect>
+             </property>
+             <property name="text">
+              <string>Edita Partida</string>
+             </property>
+            </widget>
+            <widget class="QPushButton" name="bt_FiltresPGN">
+             <property name="geometry">
+              <rect>
+               <x>230</x>
+               <y>40</y>
+               <width>80</width>
+               <height>21</height>
+              </rect>
+             </property>
+             <property name="text">
+              <string>Filtres</string>
+             </property>
+            </widget>
+            <widget class="QPushButton" name="bt_esborraPartidaSQ3">
+             <property name="geometry">
+              <rect>
+               <x>720</x>
+               <y>10</y>
+               <width>51</width>
+               <height>21</height>
+              </rect>
+             </property>
+             <property name="text">
+              <string>Esborra</string>
+             </property>
+            </widget>
+           </widget>
+          </item>
          </layout>
-        </widget>
-       </item>
-       <item>
-        <widget class="QFrame" name="frame_4">
-         <property name="minimumSize">
-          <size>
-           <width>0</width>
-           <height>80</height>
-          </size>
-         </property>
-         <property name="maximumSize">
-          <size>
-           <width>16777215</width>
-           <height>80</height>
-          </size>
-         </property>
-         <property name="styleSheet">
-          <string notr="true">background-color: rgb(38, 162, 105);</string>
-         </property>
-         <property name="frameShape">
-          <enum>QFrame::Shape::StyledPanel</enum>
-         </property>
-         <property name="frameShadow">
-          <enum>QFrame::Shadow::Raised</enum>
-         </property>
-         <widget class="QPushButton" name="bt_salvaSQ3">
-          <property name="geometry">
-           <rect>
-            <x>530</x>
-            <y>10</y>
-            <width>91</width>
-            <height>21</height>
-           </rect>
-          </property>
-          <property name="text">
-           <string>salva BBDD</string>
-          </property>
-         </widget>
-         <widget class="QPushButton" name="bt_llegirPGN">
-          <property name="geometry">
-           <rect>
-            <x>130</x>
-            <y>10</y>
-            <width>80</width>
-            <height>21</height>
-           </rect>
-          </property>
-          <property name="text">
-           <string>Carrega PGN</string>
-          </property>
-         </widget>
-         <widget class="QPushButton" name="bt_editaPartida">
-          <property name="geometry">
-           <rect>
-            <x>680</x>
-            <y>40</y>
-            <width>80</width>
-            <height>21</height>
-           </rect>
-          </property>
-          <property name="text">
-           <string>Edita Partida</string>
-          </property>
-         </widget>
-         <widget class="QPushButton" name="bt_Filtres">
-          <property name="geometry">
-           <rect>
-            <x>680</x>
-            <y>10</y>
-            <width>80</width>
-            <height>21</height>
-           </rect>
-          </property>
-          <property name="text">
-           <string>Filtres</string>
-          </property>
-         </widget>
-         <widget class="QPushButton" name="bt_EsborraPartida">
-          <property name="geometry">
-           <rect>
-            <x>340</x>
-            <y>10</y>
-            <width>80</width>
-            <height>21</height>
-           </rect>
-          </property>
-          <property name="text">
-           <string>Esborra</string>
-          </property>
-         </widget>
-         <widget class="QPushButton" name="bt_salvaPGN">
-          <property name="geometry">
-           <rect>
-            <x>210</x>
-            <y>40</y>
-            <width>80</width>
-            <height>21</height>
-           </rect>
-          </property>
-          <property name="text">
-           <string>Salva PGN</string>
-          </property>
-         </widget>
-         <widget class="QPushButton" name="bt_Sortir">
-          <property name="geometry">
-           <rect>
-            <x>770</x>
-            <y>40</y>
-            <width>80</width>
-            <height>21</height>
-           </rect>
-          </property>
-          <property name="text">
-           <string>Sortir</string>
-          </property>
-         </widget>
-         <widget class="QPushButton" name="bt_nouPGN">
-          <property name="geometry">
-           <rect>
-            <x>20</x>
-            <y>10</y>
-            <width>80</width>
-            <height>21</height>
-           </rect>
-          </property>
-          <property name="text">
-           <string>Nou PGN</string>
-          </property>
-         </widget>
-         <widget class="QPushButton" name="pushButton">
-          <property name="geometry">
-           <rect>
-            <x>530</x>
-            <y>40</y>
-            <width>111</width>
-            <height>21</height>
-           </rect>
-          </property>
-          <property name="text">
-           <string>Afegeix Partida</string>
-          </property>
-         </widget>
         </widget>
        </item>
       </layout>
