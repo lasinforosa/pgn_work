@@ -129,7 +129,7 @@ class MainWindow(QMainWindow):
                 while True:
                     # Llegeix la següent partida. Pot aixecar excepcions si el PGN té errors greus.
                     game = chess.pgn.read_game(pgn_file)
-                    # print(f"Llegint partida: {game}") # Missatge a consola o status bar
+                    print(f"Llegint partida: {game}") # Missatge a consola o status bar
                     if game is None:
                         break # Fi del fitxer
 
@@ -358,7 +358,8 @@ class MainWindow(QMainWindow):
 
         mybase = Bbdd(file_path)
 
-        self.loaded_games = [] # Buida la llista de partides anteriors
+        self.loaded_games = [] # Buida la llista de partides anteriors PGN
+        self.sq3_games = [] # partides sqlite3
         self.tableWidget_Partides.setRowCount(0) # Buida la taula
         self.ui.te_PGN.clear() # Buida el visor de jugades
         self.netejaCamps() # Buida els camps de detall
@@ -366,11 +367,11 @@ class MainWindow(QMainWindow):
         try:
             # Important especificar encoding, utf-8 és comú, però pot variar.
             # errors='ignore' o 'replace' pot ajudar amb caràcters invàlids.
-            self.loaded_games = mybase.llegeixPartides() # Llegeix les partides de la base de dades
+            self.sq3_games = mybase.llegeixPartides() # Llegeix les partides de la base de dades
 
             # itera a la llista de partides per incloure-les a la taula
-            for game in self.loaded_games:
-                # print(game)
+            for game_sq3 in self.sq3_games:
+                # print(game_sq3)
                 # Afegeix fila a la taula amb les capçaleres seleccionades
                 row_position = self.tableWidget_Partides.rowCount()
                 self.tableWidget_Partides.insertRow(row_position)
