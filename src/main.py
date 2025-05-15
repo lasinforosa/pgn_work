@@ -9,6 +9,7 @@ from PySide6.QtUiTools import QUiLoader
 import chess
 import chess.pgn
 import sqlite3 as sq
+from bbdd import Bbdd
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -212,12 +213,18 @@ class MainWindow(QMainWindow):
         return moves_string_net.strip() # Assegurem que no hi hagi espais al principi/final
     
 
-    def mostra_jugades_partida(self, game):
+    def mostra_jugades_partida(self, selected_game):
         """Formata i mostra les jugades de la partida donada al QTextEdit."""
-        if not game:
+        if not selected_game:
             self.ui.te_PGN.clear()
             return
-
+        game = chess.pgn.Game()
+        game = selected_game # Obtenim la partida seleccionada
+        # Obtenim les capçaleres i les jugades
+        headers = game.headers
+        print(headers) # Mostra les capçaleres a la consola
+        # Mostra les capçaleres al QTextEdit (zona taronja)
+        self.ui.te_PGN.clear() # Neteja el QTextEdit abans de mostrar les jugades
         board = game.board() # Tauler inicial (pot tenir FEN)
         moves_text = ""
         move_number = board.fullmove_number if board.turn == chess.WHITE else board.fullmove_number
@@ -347,7 +354,9 @@ class MainWindow(QMainWindow):
         """Obre diàleg per seleccionar un fitxer SQLite i carregar les partides."""
         file_path, _ = QFileDialog.getOpenFileName(self, "Obre Fitxer SQLite", "", "Fitxers SQLite (*.db);;Tots els fitxers (*)")
         if not file_path:
-            return
+            file_path = self.bd_defecte # Fitxer per defecte
+
+        mybase = Bbdd(file_path)
 
         self.loaded_games = [] # Buida la llista de partides anteriors
         self.tableWidget_Partides.setRowCount(0) # Buida la taula
@@ -357,41 +366,34 @@ class MainWindow(QMainWindow):
         try:
             # Important especificar encoding, utf-8 és comú, però pot variar.
             # errors='ignore' o 'replace' pot ajudar amb caràcters invàlids.
-            
-            with open(file_path, 'r', encoding='utf-8', errors='replace') as pgn_file:
-                while True:
-                    # Llegeix la següent partida. Pot aixecar excepcions si el PGN té errors greus.
-                    game = chess.pgn.read_game(pgn_file)
-                    # print(f"Llegint partida: {game}") # Missatge a consola o status bar
-                    if game is None:
-                        break # Fi del fitxer
+            self.loaded_games = mybase.llegeixPartides() # Llegeix les partides de la base de dades
 
-                    self.loaded_games.append(game) # Guarda l'objecte sencer
+            # itera a la llista de partides per incloure-les a la taula
+            for game in self.loaded_games:
+                # print(game)
+                # Afegeix fila a la taula amb les capçaleres seleccionades
+                row_position = self.tableWidget_Partides.rowCount()
+                self.tableWidget_Partides.insertRow(row_position)
 
-                    # Afegeix fila a la taula amb les capçaleres seleccionades
-                    row_position = self.tableWidget_Partides.rowCount()
-                    self.tableWidget_Partides.insertRow(row_position)
+                # Accedeix a les capçaleres de forma segura amb .get()
+                data_row = [
+                    game[1], # Blanc
+                    game[2], # Elo B
+                    game[3], # t_B
+                    game[5], # Negre
+                    game[6], # Elo N
+                    game[7], # t_N
+                    game[8], # Torneig
+                    game[9], # Lloc
+                    game[10],# Ronda
+                    game[11],# Data
+                    game[12],# Resultat
+                    game[13] # ECO
+                ]
 
-                    self.headers = game.headers
-                    # Accedeix a les capçaleres de forma segura amb .get()
-                    data_row = [
-                        self.headers.get("White", "?"),
-                        self.headers.get("WhiteElo", "-"),
-                        self.headers.get("WhiteTitle", "?"), 
-                        self.headers.get("Black", "?"),
-                        self.headers.get("BlackElo", "-"),
-                        self.headers.get("BlackTitle", "?"),
-                        self.headers.get("Event", "?"),
-                        self.headers.get("Site", "?"),
-                        self.headers.get("Round", "?"),
-                        self.headers.get("Date", "????.??.??").replace('.', '/'), # Formata data si cal
-                        self.headers.get("Result", "*"),
-                        self.headers.get("ECO", "-")
-                    ]
-
-                    for col, data in enumerate(data_row):
-                         item = QTableWidgetItem(str(data)) # Assegura't que sigui string
-                         self.tableWidget_Partides.setItem(row_position, col, item)
+                for col, data in enumerate(data_row):
+                     item = QTableWidgetItem(str(data))
+                     self.tableWidget_Partides.setItem(row_position, col, item) 
 
             # Ajusta l'amplada de les columnes al contingut després de carregar
             # self.tableWidget_Partides.resizeColumnsToContents()
@@ -399,8 +401,8 @@ class MainWindow(QMainWindow):
 
         except Exception as e:
             # Mostra un error a l'usuari (millor amb QMessageBox)
-            print(f"Error llegint el fitxer PGN: {e}")
-            self.ui.te_PGN.setPlainText(f"Error llegint el fitxer PGN:\n{e}")
+            print(f"Error llegint el fitxer Sqlite: {e}")
+            self.ui.te_PGN.setPlainText(f"Error llegint el fitxer BBDD:\n{e}")
 
 
     def save_as_sqlite(self):
