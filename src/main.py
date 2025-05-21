@@ -2,7 +2,8 @@
 
 import sys
 import io
-from PySide6.QtWidgets import QApplication, QMainWindow, QFileDialog, QTableWidget, QHeaderView, QTableWidgetItem
+from PySide6.QtWidgets import (QApplication, QMainWindow, QFileDialog, QTableWidget, 
+                               QHeaderView, QTableWidgetItem, QMessageBox)
 from PySide6.QtCore import Qt, QDate
 from PySide6.QtUiTools import QUiLoader   
 # from ui_mainwindow import Ui_MainWindow
@@ -359,7 +360,6 @@ class MainWindow(QMainWindow):
         mybase = Bbdd(file_path)
 
         self.loaded_games = [] # Buida la llista de partides anteriors PGN
-        self.sq3_games = [] # partides sqlite3
         self.tableWidget_Partides.setRowCount(0) # Buida la taula
         self.ui.te_PGN.clear() # Buida el visor de jugades
         self.netejaCamps() # Buida els camps de detall
@@ -367,34 +367,37 @@ class MainWindow(QMainWindow):
         try:
             # Important especificar encoding, utf-8 és comú, però pot variar.
             # errors='ignore' o 'replace' pot ajudar amb caràcters invàlids.
-            self.sq3_games = mybase.llegeixPartides() # Llegeix les partides de la base de dades
-
-            # itera a la llista de partides per incloure-les a la taula
-            for game_sq3 in self.sq3_games:
-                # print(game_sq3)
+            self.loaded_games = mybase.llegeixPartidesAsGames() # Llegeix les partides de la base de dades
+            if not self.loaded_games:
+                QMessageBox.information(self, "Càrrega DB", "No s'han trobat partides a la base de dades.")
+                return
+            
+            
+            for game in self.loaded_games:
                 # Afegeix fila a la taula amb les capçaleres seleccionades
                 row_position = self.tableWidget_Partides.rowCount()
                 self.tableWidget_Partides.insertRow(row_position)
 
+                self.headers = game.headers
                 # Accedeix a les capçaleres de forma segura amb .get()
                 data_row = [
-                    game[1], # Blanc
-                    game[2], # Elo B
-                    game[3], # t_B
-                    game[5], # Negre
-                    game[6], # Elo N
-                    game[7], # t_N
-                    game[8], # Torneig
-                    game[9], # Lloc
-                    game[10],# Ronda
-                    game[11],# Data
-                    game[12],# Resultat
-                    game[13] # ECO
+                    self.headers.get("White", "?"),
+                    self.headers.get("WhiteElo", "-"),
+                    self.headers.get("WhiteTitle", "?"), 
+                    self.headers.get("Black", "?"),
+                    self.headers.get("BlackElo", "-"),
+                    self.headers.get("BlackTitle", "?"),
+                    self.headers.get("Event", "?"),
+                    self.headers.get("Site", "?"),
+                    self.headers.get("Round", "?"),
+                    self.headers.get("Date", "????.??.??").replace('.', '/'), # Formata data si cal
+                    self.headers.get("Result", "*"),
+                    self.headers.get("ECO", "-")
                 ]
 
                 for col, data in enumerate(data_row):
-                     item = QTableWidgetItem(str(data))
-                     self.tableWidget_Partides.setItem(row_position, col, item) 
+                    item = QTableWidgetItem(str(data)) # Assegura't que sigui string
+                    self.tableWidget_Partides.setItem(row_position, col, item)
 
             # Ajusta l'amplada de les columnes al contingut després de carregar
             # self.tableWidget_Partides.resizeColumnsToContents()
@@ -402,9 +405,10 @@ class MainWindow(QMainWindow):
 
         except Exception as e:
             # Mostra un error a l'usuari (millor amb QMessageBox)
-            print(f"Error llegint el fitxer Sqlite: {e}")
-            self.ui.te_PGN.setPlainText(f"Error llegint el fitxer BBDD:\n{e}")
+            print(f"Error llegint la BBDD: {e}")
+            self.ui.te_PGN.setPlainText(f"Error llegint la BBDD:\n{e}")    
 
+           
 
     def save_as_sqlite(self):
         """Obre diàleg per guardar un fitxer SQLite amb les partides carregades."""

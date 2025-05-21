@@ -1,0 +1,446 @@
+# -*- coding: utf-8 -*-
+import sys
+import chess
+import chess.pgn
+import io
+import sqlite3 # Assegura't que està importat
+from PySide6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
+                               QPushButton, QFileDialog, QTextEdit, QTableWidget,
+                               QTableWidgetItem, QHeaderView, QLineEdit, QLabel, QComboBox,
+                               QDateEdit, QSplitter, QMessageBox)
+from PySide6.QtCore import Qt, QDate
+
+# --- Classe MyBase (Adaptada per desar/llegir columnes individuals) ---
+class MyBase:
+    def __init__(self, db_path=None):
+        if db_path is None:
+            self.db_path = "../assets/bd/twic_1589.db"
+        self.db_path = db_path
+        self._crear_taula_si_no_existeix()
+
+    def _get_conn(self):
+        return sqlite3.connect(self.db_path)
+
+    def _crear_taula_si_no_existeix(self):
+        conn = self._get_conn()
+        cursor = conn.cursor()
+        try:
+            # Estructura de taula reflectint les teves columnes
+            cursor.execute("""
+            CREATE TABLE IF NOT EXISTS partides (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                blanc TEXT, elo_blanques TEXT, titol_blanc TEXT, fide_id_blanc TEXT,
+                negre TEXT, elo_negres TEXT, titol_negre TEXT, fide_id_negre TEXT,
+                torneig TEXT, lloc TEXT, ronda TEXT, data TEXT, resultat TEXT,
+                eco TEXT, fen TEXT, variant TEXT, ritme TEXT, obertura TEXT, variacio TEXT,
+                estudi TEXT, capitol TEXT, comentarista TEXT, num_partida TEXT,
+                jugades TEXT  
+            );
+            """)
+            conn.commit()
+        except sqlite3.Error as e:
+            print(f"Error creant la taula partides: {e}")
+        finally:
+            conn.close()
+
+    def desar_partida_detallada(self, game_object):
+        conn = self._get_conn()
+        cursor = conn.cursor()
+        h = game_object.headers
+        
+        # Generar la cadena de jugades SAN
+        exporter = chess.pgn.StringExporter(headers=False, comments=True, variations=True) 
+        jugades_san_string = game_object.accept(exporter).strip()
+        # O si només vols mainline sense comentaris/variacions:
+        # board_temp = game_object.board()
+        # jugades_san_list = []
+        # for move in game_object.mainline_moves():
+        #     jugades_san_list.append(board_temp.san(move))
+        #     board_temp.push(move)
+        # jugades_san_string = " ".join(jugades_san_list)
+        # if h.get("Result", "*") != "*":
+        #    jugades_san_string += " " + h.get("Result", "*")
+
+
+        sql = """INSERT INTO PartidesDetall (
+                    blanc, elo_blanques, titol_blanc, fide_id_blanc,
+                    negre, elo_negres, titol_negre, fide_id_negre,
+                    torneig, lloc, ronda, data, resultat, eco, fen,
+                    variant, ritme, obertura, variacio, estudi,
+                    capitol, comentarista, num_partida, jugades_san
+                 ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)"""
+        try:
+            cursor.execute(sql, (
+                h.get("White", ""), h.get("WhiteElo", ""), h.get("WhiteTitle", ""), h.get("WhiteFideId", ""),
+                h.get("Black", ""), h.get("BlackElo", ""), h.get("BlackTitle", ""), h.get("BlackFideId", ""),
+                h.get("Event", ""), h.get("Site", ""), h.get("Round", ""), h.get("Date", "????.??.??"),
+                h.get("Result", "*"), h.get("ECO", ""), h.get("FEN", chess.STARTING_FEN), # Desa FEN o inicial
+                h.get("Variant", "Standard"), h.get("TimeControl", ""), h.get("Opening", ""), h.get("Variation", ""),
+                h.get("StudyName", ""), h.get("Chapter", ""), h.get("Annotator", ""), h.get("GameNumber", ""),
+                jugades_san_string # La cadena només amb jugades
+            ))
+            conn.commit()
+            print(f"Partida detallada '{h.get('Event', 'N/A')}' desada a SQLite.")
+            return cursor.lastrowid
+        except sqlite3.Error as e:
+            print(f"Error desant partida detallada a SQLite: {e}")
+            conn.rollback()
+            return None
+        finally:
+            conn.close()
+
+    def llegeixPartidesDetallades(self):
+        conn = self._get_conn()
+        # Retornar com a diccionaris per facilitar l'accés per nom de columna
+        conn.row_factory = sqlite3.Row 
+        cursor = conn.cursor()
+        partides_raw = []
+        try:
+            # Llegim totes les columnes que necessitarem per reconstruir
+            cursor.execute("SELECT * FROM partides")
+            partides_raw = cursor.fetchall() # Llista de sqlite3.Row (com diccionaris)
+        except sqlite3.Error as e:
+            print(f"Error llegint partides de SQLite: {e}")
+        finally:
+            conn.close()
+        return partides_raw
+
+# --- Classe PGNWorkApp ---
+class PGNWorkApp(QMainWindow):
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("PGN Work - Reconstrucció")
+        self.setGeometry(100, 100, 1300, 800)
+
+        self.loaded_games = []
+        self.my_db_handler = MyBase("partides_detallades.db")
+
+        # --- UI (similar a abans, assegura't que els noms dels widgets coincideixen) ---
+        central_widget = QWidget()
+        self.setCentralWidget(central_widget)
+        main_layout = QVBoxLayout(central_widget)
+        splitter_main = QSplitter(Qt.Horizontal)
+        
+        left_panel = QWidget(); left_layout = QVBoxLayout(left_panel)
+        self.lineEdit_Event = QLineEdit(); self.lineEdit_Site = QLineEdit()
+        self.lineEdit_Date = QLineEdit(); self.lineEdit_Round = QLineEdit()
+        self.lineEdit_White = QLineEdit(); self.lineEdit_WhiteElo = QLineEdit()
+        self.lineEdit_Black = QLineEdit(); self.lineEdit_BlackElo = QLineEdit()
+        self.lineEdit_Result = QLineEdit(); self.lineEdit_ECO = QLineEdit()
+        self.lineEdit_FEN_display = QLineEdit() # Per mostrar el FEN
+        # ... altres QLineEdit per a totes les teves capçaleres ...
+        
+        fields = { "Torneig:": self.lineEdit_Event, "Lloc:": self.lineEdit_Site, 
+                   "Data:": self.lineEdit_Date, "Ronda:": self.lineEdit_Round,
+                   "Blanc:": self.lineEdit_White, "Elo B:": self.lineEdit_WhiteElo,
+                   "Negre:": self.lineEdit_Black, "Elo N:": self.lineEdit_BlackElo,
+                   "Resultat:": self.lineEdit_Result, "ECO:": self.lineEdit_ECO,
+                   "FEN (per visor):": self.lineEdit_FEN_display
+                 }
+        for label_text, line_edit_widget in fields.items():
+            left_layout.addWidget(QLabel(label_text))
+            left_layout.addWidget(line_edit_widget)
+        left_layout.addStretch()
+        splitter_main.addWidget(left_panel)
+
+        right_panel = QWidget(); right_layout = QVBoxLayout(right_panel)
+        self.tableWidget_Partides = QTableWidget()
+        self.table_headers_display = ["ID DB", "Blanc", "Elo B", "Negre", "Elo N", "Torneig", "Data", "Resultat", "ECO"]
+        self.tableWidget_Partides.setColumnCount(len(self.table_headers_display))
+        self.tableWidget_Partides.setHorizontalHeaderLabels(self.table_headers_display)
+        self.tableWidget_Partides.setSelectionBehavior(QTableWidget.SelectRows)
+        self.tableWidget_Partides.setSelectionMode(QTableWidget.SingleSelection)
+        self.tableWidget_Partides.setEditTriggers(QTableWidget.NoEditTriggers)
+        self.tableWidget_Partides.itemSelectionChanged.connect(self.on_game_selected)
+
+        self.textEdit_Jugades_SAN_visor = QTextEdit()
+        self.textEdit_Jugades_SAN_visor.setReadOnly(True)
+        self.textEdit_Jugades_SAN_visor.setFontFamily("monospace")
+
+        splitter_dret_vertical = QSplitter(Qt.Vertical)
+        splitter_dret_vertical.addWidget(self.tableWidget_Partides)
+        splitter_dret_vertical.addWidget(self.textEdit_Jugades_SAN_visor)
+        splitter_dret_vertical.setSizes([300,300])
+        right_layout.addWidget(splitter_dret_vertical)
+        splitter_main.addWidget(right_panel)
+        splitter_main.setSizes([450,850])
+        main_layout.addWidget(splitter_main)
+
+        button_layout = QHBoxLayout()
+        self.btn_carrega_pgn_fitxer = QPushButton("Carregar PGN (Fitxer)")
+        self.btn_carrega_pgn_db = QPushButton("Carregar Partides (DB)")
+        self.btn_desar_partida_seleccionada_db = QPushButton("Desar Seleccionada a DB")
+        self.btn_neteja_interficie = QPushButton("Neteja UI")
+        button_layout.addWidget(self.btn_carrega_pgn_fitxer)
+        button_layout.addWidget(self.btn_carrega_pgn_db)
+        button_layout.addWidget(self.btn_desar_partida_seleccionada_db)
+        button_layout.addWidget(self.btn_neteja_interficie)
+        main_layout.addLayout(button_layout)
+
+        self.btn_carrega_pgn_fitxer.clicked.connect(self.carrega_des_de_fitxer_pgn_ui)
+        self.btn_carrega_pgn_db.clicked.connect(self.carrega_des_de_sqlite_ui)
+        self.btn_desar_partida_seleccionada_db.clicked.connect(self.desar_partida_actual_a_db)
+        self.btn_neteja_interficie.clicked.connect(self._netejar_interficie_abans_de_carregar)
+        
+        self._netejar_interficie_abans_de_carregar()
+        self.current_selected_game_object_for_db = None
+
+
+    def _netejar_interficie_abans_de_carregar(self):
+        self.loaded_games = []
+        self.tableWidget_Partides.setRowCount(0)
+        self.textEdit_Jugades_SAN_visor.clear()
+        self.neteja_camps_detall_ui()
+        self.current_selected_game_object_for_db = None
+
+    def neteja_camps_detall_ui(self):
+        # Neteja tots els QLineEdit del panell esquerre
+        self.lineEdit_Event.clear(); self.lineEdit_Site.clear(); self.lineEdit_Date.clear()
+        self.lineEdit_Round.clear(); self.lineEdit_White.clear(); self.lineEdit_WhiteElo.clear()
+        self.lineEdit_Black.clear(); self.lineEdit_BlackElo.clear(); self.lineEdit_Result.clear()
+        self.lineEdit_ECO.clear(); self.lineEdit_FEN_display.clear()
+        # ... neteja els altres ...
+
+    def _afegir_game_object_a_taula(self, game_object, db_id="N/A"):
+        """Mètode privat per afegir un game_object a la QTableWidget."""
+        row_position = self.tableWidget_Partides.rowCount()
+        self.tableWidget_Partides.insertRow(row_position)
+        h = game_object.headers
+        data_row_for_table = [
+            str(db_id), # ID de la BBDD si ve d'allà, sinó "N/A" o "-"
+            h.get("White", "?"), h.get("WhiteElo", "-"),
+            h.get("Black", "?"), h.get("BlackElo", "-"),
+            h.get("Event", "?"), h.get("Date", "????.??.??"),
+            h.get("Result", "*"), h.get("ECO", "-")
+        ]
+        for col, data in enumerate(data_row_for_table):
+            self.tableWidget_Partides.setItem(row_position, col, QTableWidgetItem(str(data)))
+
+    def carrega_des_de_fitxer_pgn_ui(self):
+        file_path, _ = QFileDialog.getOpenFileName(self, "Obre Fitxer PGN", "", "Fitxers PGN (*.pgn)")
+        if not file_path: return
+        self._netejar_interficie_abans_de_carregar()
+        try:
+            with open(file_path, 'r', encoding='utf-8', errors='replace') as pgn_file:
+                count = 0
+                while True:
+                    game = chess.pgn.read_game(pgn_file)
+                    if game is None: break
+                    self.loaded_games.append(game)
+                    self._afegir_game_object_a_taula(game, db_id="-") # "-" indica que no ve de la DB
+                    count += 1
+                QMessageBox.information(self, "Càrrega PGN", f"S'han carregat {count} partides del fitxer.")
+        except Exception as e:
+            QMessageBox.critical(self, "Error Càrrega Fitxer", f"No s'ha pogut llegir el fitxer PGN:\n{e}")
+
+    def carrega_des_de_sqlite_ui(self):
+        """Carrega partides des de SQLite i les reconstrueix."""
+        self._netejar_interficie_abans_de_carregar()
+        
+        partides_raw_data = self.my_db_handler.llegeixPartidesDetallades()
+        if not partides_raw_data:
+            QMessageBox.information(self, "Càrrega DB", "No s'han trobat partides a la base de dades.")
+            return
+
+        reconstruides_count = 0
+        errors_count = 0
+        for row_data in partides_raw_data: # row_data és un sqlite3.Row (com un diccionari)
+            game = chess.pgn.Game() # Crea un joc PGN buit
+
+            # 1. Poblar capçaleres des de les columnes de la BBDD
+            game.headers["Event"] = row_data["torneig"]
+            game.headers["Site"] = row_data["lloc"]
+            game.headers["Date"] = row_data["data"]
+            game.headers["Round"] = row_data["ronda"]
+            game.headers["White"] = row_data["blanc"]
+            game.headers["WhiteElo"] = row_data["elo_blanques"]
+            game.headers["WhiteTitle"] = row_data["titol_blanc"]
+            game.headers["WhiteFideId"] = row_data["fide_id_blanc"]
+            game.headers["Black"] = row_data["negre"]
+            game.headers["BlackElo"] = row_data["elo_negres"]
+            game.headers["BlackTitle"] = row_data["titol_negre"]
+            game.headers["BlackFideId"] = row_data["fide_id_negre"]
+            game.headers["Result"] = row_data["resultat"]
+            game.headers["ECO"] = row_data["eco"]
+            game.headers["FEN"] = row_data["fen"] if row_data["fen"] else chess.STARTING_FEN
+            game.headers["Variant"] = row_data["variant"]
+            game.headers["TimeControl"] = row_data["ritme"]
+            game.headers["Opening"] = row_data["obertura"]
+            game.headers["Variation"] = row_data["variacio"]
+            game.headers["StudyName"] = row_data["estudi"] # Assegura't que aquests noms de columna existeixen
+            game.headers["Chapter"] = row_data["capitol"]
+            game.headers["Annotator"] = row_data["comentarista"]
+            game.headers["GameNumber"] = row_data["num_partida"]
+
+            # 2. Preparar el tauler segons FEN (si n'hi ha)
+            board = chess.Board()
+            if row_data["fen"]:
+                try:
+                    board.set_fen(row_data["fen"])
+                except ValueError:
+                    print(f"Advertència: FEN invàlid per a la partida ID {row_data['id']}: '{row_data['fen']}'. S'usa posició inicial.")
+                    game.headers["FEN"] = chess.STARTING_FEN # Corregim al header si el FEN era dolent
+
+            # 3. Parsejar i afegir moviments
+            # El text de jugades_san pot contenir múltiples línies, números de jugada, resultat.
+            # Hem de netejar-lo i parsejar cada moviment SAN.
+            jugades_san_string = row_data["jugades_san"]
+            
+            # L'exportador de `python-chess` sense capçaleres és una bona manera de generar
+            # la cadena de moviments que després es pot parsejar.
+            # Però si la cadena `jugades_san` ja està "neta" (només moviments SAN separats per espais
+            # i possiblement números de jugada), el següent pot funcionar.
+            # Si `jugades_san` conté variacions o comentaris, `game.import_san()` és millor.
+            
+            # Mètode 1: Intentar importar tota la cadena SAN (si és prou estàndard)
+            # Això pot ser complicat si la cadena té anotacions o formatació estranya
+            # game_node = game # Comencem des del node arrel
+            # try:
+            #     # Elimina els números de jugada i punts per simplificar si cal
+            #     # cleaned_san = re.sub(r'\d+\.\.\.|\d+\.', '', jugades_san_string).strip()
+            #     # for san_move in cleaned_san.split():
+            #     #    if not san_move: continue
+            #     #    move = board.parse_san(san_move)
+            #     #    game_node = game_node.add_variation(move)
+            #     #    board.push(move)
+            #     # Caldria una implementació més robusta per parsejar SAN complex.
+            #     # La forma més segura és si 'jugades_san' és un PGN simple només de moviments.
+            #     # En aquest cas, es podria fer:
+            #     pgn_simple_moviments = io.StringIO(jugades_san_string)
+            #     game_from_moves_only = chess.pgn.read_game(pgn_simple_moviments, Visitor=chess.pgn.GameBuilder)
+            #     if game_from_moves_only:
+            #         game.game().moves = game_from_moves_only.game().moves # Copia la línia principal
+            #     else:
+            #         raise ValueError("No s'han pogut parsejar els moviments.")
+            #
+            # except Exception as e_moves:
+            #    print(f"Error parsejant moviments per ID {row_data['id']}: {jugades_san_string[:50]}... Error: {e_moves}")
+            #    errors_count += 1
+            #    continue # Salta a la següent partida si no es poden parsejar els moviments
+
+            # Mètode 2: Reconstruir el PGN complet i llegir-lo (MÉS ROBUST)
+            # Creem una cadena PGN temporal amb les capçaleres de la DB i les jugades_san
+            temp_pgn_str_list = []
+            for key, value in game.headers.items():
+                if value : # Només afegeix headers si tenen valor
+                    temp_pgn_str_list.append(f'[{key} "{value}"]')
+            temp_pgn_str_list.append("") # Línia buida entre headers i moviments
+            temp_pgn_str_list.append(jugades_san_string) # Les jugades de la BBDD
+
+            temp_pgn_full_string = "\n".join(temp_pgn_str_list)
+            
+            try:
+                game_reconstruido = chess.pgn.read_game(io.StringIO(temp_pgn_full_string))
+                if game_reconstruido:
+                    self.loaded_games.append(game_reconstruido)
+                    self._afegir_game_object_a_taula(game_reconstruido, db_id=row_data["id"])
+                    reconstruides_count += 1
+                else:
+                    # Això no hauria de passar si read_game retorna None sense excepció
+                    print(f"read_game va retornar None per a ID {row_data['id']} amb PGN: {temp_pgn_full_string[:100]}...")
+                    errors_count += 1
+            except Exception as e_rebuild:
+                print(f"Error reconstruint game object per ID {row_data['id']} desde PGN: {e_rebuild}")
+                print(f"PGN intentat: {temp_pgn_full_string[:200]}...") # Mostra part del PGN que va fallar
+                errors_count += 1
+                
+        msg = f"S'han carregat i reconstruït {reconstruides_count} partides de la base de dades."
+        if errors_count > 0:
+            msg += f"\nHi ha hagut {errors_count} errors durant la reconstrucció."
+        QMessageBox.information(self, "Càrrega DB", msg)
+
+    def on_game_selected(self):
+        selected_rows = self.tableWidget_Partides.selectionModel().selectedRows()
+        if not selected_rows:
+            self.textEdit_Jugades_SAN_visor.clear()
+            self.neteja_camps_detall_ui()
+            self.current_selected_game_object_for_db = None
+            return
+
+        selected_row_index = selected_rows[0].row()
+        if 0 <= selected_row_index < len(self.loaded_games):
+            selected_game = self.loaded_games[selected_row_index]
+            self.current_selected_game_object_for_db = selected_game # Guarda per desar si cal
+
+            # 1. Mostrar jugades SAN al visor
+            exporter = chess.pgn.StringExporter(headers=False, comments=True, variations=True)
+            self.textEdit_Jugades_SAN_visor.setPlainText(selected_game.accept(exporter))
+
+            # 2. Poblar camps de detall (panell esquerre)
+            h = selected_game.headers
+            self.lineEdit_Event.setText(h.get("Event", "")); self.lineEdit_Site.setText(h.get("Site", ""))
+            self.lineEdit_Date.setText(h.get("Date", "")); self.lineEdit_Round.setText(h.get("Round", ""))
+            self.lineEdit_White.setText(h.get("White", "")); self.lineEdit_WhiteElo.setText(h.get("WhiteElo", ""))
+            self.lineEdit_Black.setText(h.get("Black", "")); self.lineEdit_BlackElo.setText(h.get("BlackElo", ""))
+            self.lineEdit_Result.setText(h.get("Result", "")); self.lineEdit_ECO.setText(h.get("ECO", ""))
+            self.lineEdit_FEN_display.setText(h.get("FEN", chess.STARTING_FEN))
+            # ... pobla els altres QLineEdit ...
+        else:
+            print(f"Índex de fila ({selected_row_index}) fora de rang.")
+
+    def desar_partida_actual_a_db(self):
+        if self.current_selected_game_object_for_db:
+            # Abans de desar, actualitzem l'objecte game amb els valors dels QLineEdit (si l'usuari els ha editat)
+            game_to_save = self.current_selected_game_object_for_db
+            
+            # Actualitzar capçaleres de l'objecte game des de la UI
+            game_to_save.headers["Event"] = self.lineEdit_Event.text()
+            game_to_save.headers["Site"] = self.lineEdit_Site.text()
+            game_to_save.headers["Date"] = self.lineEdit_Date.text()
+            # ... actualitza TOTS els headers des dels QLineEdits corresponents ...
+            game_to_save.headers["FEN"] = self.lineEdit_FEN_display.text() # Important si s'ha editat el FEN
+
+            # Aquí podries permetre editar les jugades (més complex) o simplement desar l'objecte game tal com està.
+            # Per ara, desarem l'objecte game amb les capçaleres actualitzades.
+
+            db_id = self.my_db_handler.desar_partida_detallada(game_to_save)
+            if db_id:
+                QMessageBox.information(self, "Desat a DB", f"Partida desada/actualitzada a la BBDD amb ID: {db_id}")
+                # Podries actualitzar l'ID a la taula si és una nova inserció, o recarregar.
+            else:
+                QMessageBox.warning(self, "Error Desant", "No s'ha pogut desar la partida a la BBDD.")
+        else:
+            QMessageBox.warning(self, "Cap Partida Seleccionada", "No hi ha cap partida seleccionada per desar.")
+
+
+# --- Bloc Principal ---
+if __name__ == '__main__':
+    app = QApplication(sys.argv)
+    window = PGNWorkApp()
+    window.show()
+    sys.exit(app.exec())
+
+
+Canvis i Punts Clau en Aquesta Versió:
+
+MyBase.desar_partida_detallada: Ara desa cada capçalera en la seva columna i la cadena de jugades SAN (sense capçaleres PGN) a jugades_san.
+
+MyBase.llegeixPartidesDetallades: Llegeix totes les columnes. He canviat conn.row_factory = sqlite3.Row perquè retorni objectes similars a diccionaris, facilitant l'accés per nom de columna (ex: row_data["blanc"]).
+
+PGNWorkApp.carrega_des_de_sqlite_ui:
+
+Itera sobre les files (row_data) llegides.
+
+Per cada fila, crea un chess.pgn.Game().
+
+Estableix cada game.headers["TagName"] = row_data["nom_columna"].
+
+Mètode de Reconstrucció de Moviments (Mètode 2 implementat):
+
+Es construeix una cadena PGN temporal completa a partir de les capçaleres llegides de la BBDD i la cadena jugades_san de la BBDD.
+
+S'utilitza chess.pgn.read_game(io.StringIO(temp_pgn_full_string)) per parsejar aquesta cadena PGN completa. Això és generalment més robust perquè read_game gestiona la lògica de parseig de PGN, incloent la interpretació correcta dels moviments SAN en context.
+
+Afegeix l'objecte game reconstruït a self.loaded_games.
+
+Actualitza la QTableWidget amb les dades del game.headers.
+
+Gestió del FEN: S'utilitza la columna fen de la BBDD. Si està buida, s'assumeix chess.STARTING_FEN. Aquest FEN s'usa per inicialitzar el board abans de parsejar els moviments. També es desa al header del game object.
+
+on_game_selected: Quan se selecciona una partida, es poblen els QLineEdit del panell esquerre directament des de selected_game.headers. El visor de jugades mostra el SAN generat a partir de selected_game.
+
+desar_partida_actual_a_db: S'ha afegit un exemple bàsic. Quan es desa, agafa els valors dels QLineEdit del panell esquerre, actualitza els headers de l'objecte self.current_selected_game_object_for_db, i després crida a self.my_db_handler.desar_partida_detallada(). Això permet editar les capçaleres a la UI i desar els canvis. (La edició directa de les jugades SAN al QTextEdit i la seva re-sincronització amb l'objecte game és més complexa i no està implementada aquí).
+
+Aquest enfocament és més complex però necessari si les teves dades a SQLite estan desagregades. La clau és reconstruir un objecte chess.pgn.Game fidel a partir de les peces d'informació que tens. El mètode de reconstruir una cadena PGN completa temporalment i després parsejar-la amb read_game sol ser el més fiable.
+
+Prova-ho i ajusta els noms de les columnes i la lògica segons les teves necessitats exactes!
