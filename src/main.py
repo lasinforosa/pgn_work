@@ -54,16 +54,15 @@ class MainWindow(QMainWindow):
         self.ui.bt_salvaPGN.clicked.connect(self.save_as_PGN)
         self.ui.bt_editaPartidaPGN.clicked.connect(self.pendent)
         self.ui.bt_esborraPartidaPGN.clicked.connect(self.pendent)
-        self.ui.bt_FiltresPGN.clicked.connect(self.pendent)
+        
         # SQLite
         self.ui.bt_novaSQ3.clicked.connect(self.pendent)                       
         self.ui.bt_llegeixSQ3.clicked.connect(self.llegirSQ3)
         self.ui.bt_salvaSQ3.clicked.connect(self.save_as_sqlite)
         self.ui.bt_editaPartidaSQ3.clicked.connect(self.pendent)
         self.ui.bt_esborraPartidaSQ3.clicked.connect(self.pendent)
-        self.ui.bt_FiltresSQ3.clicked.connect(self.pendent)
-
-    
+       
+        self.ui.bt_Filtres.clicked.connect(self.pendent)
         self.ui.bt_Sortir.clicked.connect(self.close)
 
         # Accions dels botons panell esquerra
